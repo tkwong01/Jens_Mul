@@ -31,7 +31,7 @@ MANIFEST_DIR=$(dirname "$MANIFEST_PATH")
 MANIFEST_FILE=$(basename "$MANIFEST_PATH")
 
 # 3. Extract a clean header prefix from the manifest name (e.g., "sample_01.txt" -> "sample_01")
-HEADER="${MANIFEST_FILE%.fq.gz}"
+HEADER="${MANIFEST_FILE%.*}"
 
 # 4. CRITICAL: Change directory to where the manifest is stored.
 # This ensures ALL downstream tool outputs land exactly in this directory.
