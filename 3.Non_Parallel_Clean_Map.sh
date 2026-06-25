@@ -13,7 +13,7 @@ END_LINE=5
 threads=4  # Set your manually allocated compute threads here
 # ==============================================================================
 
-MAIN_DIR="/cluster/tufts/hussainlab/tkwong01/jens_mul"
+MAIN_DIR="$PWD"
 cd "$MAIN_DIR" || exit 1
 
 # Paths
