@@ -8,8 +8,8 @@
 # ==============================================================================
 # USER CONFIGURATION: Specify what manifest lines to run through
 # ==============================================================================
-START_LINE=1
-END_LINE=5
+START_LINE=21
+END_LINE=25
 threads=4  # Set your manually allocated compute threads here
 # ==============================================================================
 
