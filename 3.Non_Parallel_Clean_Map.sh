@@ -13,9 +13,6 @@ END_LINE=5
 threads=4  # Set your manually allocated compute threads here
 # ==============================================================================
 
-MAIN_DIR="$PWD"
-cd "$MAIN_DIR" || exit 1
-
 # Paths
 K2_DB="/cluster/tufts/hussainlab/DATABASES/kraken2_human_db"
 VIRGO2_path="/cluster/tufts/hussainlab/DATABASES/VIRGO2"
