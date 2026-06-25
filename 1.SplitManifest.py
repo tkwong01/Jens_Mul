@@ -32,7 +32,7 @@ for row in data_rows:
     if not row.strip():
         continue
     
-    # Split the row to extract the specific column values
+    # Split the row to extract the specific column values for naming
     row_fields = row.split(delimiter)
     
     # Grab values and strip accidental whitespace
@@ -40,22 +40,21 @@ for row in data_rows:
     subject_source = row_fields[subject_idx].strip()
     timepoint = row_fields[timepoint_idx].strip()
     
-    # Construct the new descriptive base name
-    # e.g., "sample_01_human_TP1"
+    # Construct the descriptive base name exactly as requested
     combined_name = f"{base_filename}_subject.source_subject_id_{subject_source}_sample.timepoint_sequential_{timepoint}"
     
     # Sanitize the name to remove any spaces or weird characters that break bash/SLURM paths
     combined_name = re.sub(r'[^a-zA-Z0-9_\-.]', '_', combined_name)
     
-    # Create the specific subdirectory path (e.g., sub_manifests/sample_01_human_TP1)
+    # Create the specific subdirectory path (e.g., sub_manifests/filename_...)
     sub_dir_path = os.path.join(new_manifest_dir, combined_name)
     os.makedirs(sub_dir_path, exist_ok=True)
 
-    # Set the final file path (e.g., sub_manifests/sample_01_human_TP1/sample_01_human_TP1.txt)
+    # Set the final file path
     output_filename = f"{combined_name}.txt"
     full_output_path = os.path.join(sub_dir_path, output_filename)
 
-    # Write the header and the specific row to the new file
+    # Write the FULL header and the FULL row to the new file (grabs all columns)
     with open(full_output_path, "w") as out_f:
         out_f.write(header)
         out_f.write(row)
