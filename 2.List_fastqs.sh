@@ -1,15 +1,14 @@
 #!/bin/bash
 
-# Target the current working directory and everything below it
-TARGET_DIR="."
+# Target the sub_manifests directory
 OUTPUT_FILE="2.manifests_absolute_paths.txt"
 
-echo "Searching all subdirectories from $(pwd) for .txt manifest files..."
+echo "Searching all subdirectories within $(pwd)/sub_manifests for .txt manifest files..."
 echo "--------------------------------------------------------"
 
-# Find all .txt files, convert to absolute paths, print to screen, and save to file
-# Note: Using $PWD instead of . forces find to output absolute paths.
-find "$PWD/sub_manifests" -type f -name "*.txt" | tee "$OUTPUT_FILE"
+# Find all .txt files recursively, forcing absolute paths using $PWD
+# ! -name protects the output file from being caught in the search
+find "$PWD/sub_manifests" -type f -name "*.txt" ! -name "$OUTPUT_FILE" | tee "$OUTPUT_FILE"
 
 # Count total files found
 count=$(wc -l < "$OUTPUT_FILE")
