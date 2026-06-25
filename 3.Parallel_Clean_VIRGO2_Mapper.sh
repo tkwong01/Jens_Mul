@@ -114,6 +114,8 @@ echo "Running X-Mapper to extract reference map counts..."
 x-mapper --reference "$VIRGO2_fasta" \
          --queries "${HEADER}_final_for_virgo.fq.gz" \
          --num-threads "$threads" \
+         --out-vcf "${HEADER}" \
+         --out-mutations "${HEADER}_mutations" \
          --out-refs-map-count "${HEADER}_refs_map_counts.txt"
 
 # Verify the file was successfully written and is not empty
