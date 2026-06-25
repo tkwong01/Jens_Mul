@@ -3,13 +3,21 @@ import re
 
 metadata_file = "./RealManifests/metadata-6.tsv"
 manifest_file = "./RealManifests/manifest-7.tsv"
+merged_output_file = "./RealManifests/merged_master_manifest.tsv"
 new_manifest_dir = "sub_manifests"
 
 os.makedirs(new_manifest_dir, exist_ok=True)
 
-# ------------------------------------------------------------------------------
-# STEP 1: Parse Metadata file horizontally by sample_id
-# ------------------------------------------------------------------------------
+def normalize_filename(filename):
+    """Strips read direction tags and fastq extensions for robust matching."""
+    if not filename:
+        return ""
+    base = re.sub(r'\.R[12]\.fq\.gz$|\.se\.fq\.gz$|\.unpaired\.fq\.gz$|\.fastq\.gz$|\.fq\.gz$', '', filename.strip())
+    return base
+
+# ==============================================================================
+# STEP 1: MERGE TSVs HORIZONTALLY BY MATCHING file.file_id -> file_id
+# ==============================================================================
 metadata_lookup = {}
 
 with open(metadata_file, "r") as f:
@@ -20,39 +28,23 @@ meta_delimiter = "\t" if "\t" in meta_header else ","
 meta_header_fields = [field.strip() for field in meta_header.split(meta_delimiter)]
 
 try:
-    meta_sample_idx = meta_header_fields.index("sample.sample_id")
-    meta_subject_idx = meta_header_fields.index("subject.source_subject_id")
-    meta_timepoint_idx = meta_header_fields.index("sample.timepoint_sequential")
+    # Adjusted to match your exact metadata key string
+    meta_file_idx = meta_header_fields.index("file.file_id")
 except ValueError as e:
-    try:
-        meta_sample_idx = meta_header_fields.index("sample_id")
-    except ValueError:
-        raise ValueError(f"Could not find sample_id column in metadata header: {e}")
+    raise ValueError(f"Could not find 'file.file_id' column in metadata: {e}")
 
+# Map every metadata row by its normalized file ID string
 for row in meta_lines[1:]:
     if not row.strip():
         continue
     fields = row.rstrip("\r\n").split(meta_delimiter)
-    if len(fields) <= max(meta_sample_idx, meta_subject_idx, meta_timepoint_idx):
+    if len(fields) <= meta_file_idx:
         continue
-    
-    s_id = fields[meta_sample_idx].strip()
-    sub_id = fields[meta_subject_idx].strip()
-    tp_seq = fields[meta_timepoint_idx].strip()
-    
-    # Store naming attributes along with the FULL horizontal row values
-    metadata_lookup[s_id] = {
-        "subject_id": sub_id,
-        "timepoint": tp_seq,
-        "full_meta_row": meta_delimiter.join(fields)
-    }
+    f_id = fields[meta_file_idx].strip()
+    norm_meta_key = normalize_filename(f_id)
+    metadata_lookup[norm_meta_key] = meta_delimiter.join(fields)
 
-# Create a blank fallback row for unmatched metadata to keep horizontal column alignment
-blank_meta_columns = meta_delimiter.join(["None"] * len(meta_header_fields))
-
-# ------------------------------------------------------------------------------
-# STEP 2: Merge Horizontally and Split into Sub-Manifests (With Adaptive Matching)
-# ------------------------------------------------------------------------------
+# Read operational manifest
 with open(manifest_file, "r") as f:
     manifest_lines = f.readlines()
 
@@ -62,63 +54,65 @@ manifest_header_fields = [field.strip() for field in manifest_header.split(manif
 
 try:
     manifest_file_id_idx = manifest_header_fields.index("file_id")
-    manifest_sample_idx = manifest_header_fields.index("sample_id")
 except ValueError as e:
-    raise ValueError(f"Missing essential columns in manifest header: {e}")
+    raise ValueError(f"Could not find 'file_id' column in manifest: {e}")
 
-# Construct the master horizontal header string
-merged_header = f"{manifest_header}{manifest_delimiter}{meta_header}\n"
+master_header = f"{manifest_header}{manifest_delimiter}{meta_header}\n"
+blank_meta_columns = manifest_delimiter.join(["None"] * len(meta_header_fields))
 
-files_created = 0
-
+master_rows = []
 for row in manifest_lines[1:]:
     if not row.strip():
         continue
-    
     fields = row.rstrip("\r\n").split(manifest_delimiter)
-    if len(fields) <= max(manifest_file_id_idx, manifest_sample_idx):
+    if len(fields) <= manifest_file_id_idx:
         continue
         
     file_id = fields[manifest_file_id_idx].strip()
-    manifest_sample_id = fields[manifest_sample_idx].strip()
-    
-    # 1. Grab primary key from comma-separated sequence
-    clean_sample_key = manifest_sample_id.split(",")[0].strip()
-    
-    # 2. Strip operational tracking headers (e.g., VMRC_FRESH_, VMRC_MOD_)
-    clean_sample_key = re.sub(r'^VMRC_[A-Z]+_', '', clean_sample_key)
-    
-    # 3. Strip trailing sequencing extensions if they leaked into the manifest IDs
-    clean_sample_key = re.sub(r'\.R[12]\.fq\.gz$|\.se\.fq\.gz$|\.unpaired\.fq\.gz$', '', clean_sample_key)
+    norm_manifest_key = normalize_filename(file_id)
 
-    # Check for direct key match or sub-string match inside metadata lookup dictionary
-    matched_key = None
-    if clean_sample_key in metadata_lookup:
-        matched_key = clean_sample_key
-    else:
-        # Loop through metadata to catch cases where metadata strings contain the keys partially
-        for meta_key in metadata_lookup.keys():
-            if clean_sample_key in meta_key or meta_key in clean_sample_key:
-                matched_key = meta_key
-                break
+    # Match based on normalized base names
+    matched_meta_data = metadata_lookup.get(norm_manifest_key, blank_meta_columns)
+    
+    clean_manifest_row = row.rstrip('\r\n')
+    master_rows.append(f"{clean_manifest_row}{manifest_delimiter}{matched_meta_data}\n")
 
-    # Bind structural row metrics
-    if matched_key:
-        subject_source = metadata_lookup[matched_key]["subject_id"]
-        timepoint = metadata_lookup[matched_key]["timepoint"]
-        matched_meta_data = metadata_lookup[matched_key]["full_meta_row"]
-    else:
+with open(merged_output_file, "w") as out_f:
+    out_f.write(master_header)
+    out_f.writelines(master_rows)
+
+print(f"--> Step 1 Complete: Saved master horizontal merge to '{merged_output_file}'")
+
+# ==============================================================================
+# STEP 2: GENERATE DIRECTORIES AND SUB_MANIFESTS From Merged File
+# ==============================================================================
+with open(merged_output_file, "r") as f:
+    merged_lines = f.readlines()
+
+header = merged_lines[0].rstrip("\r\n")
+delimiter = "\t" if "\t" in header else ","
+header_fields = [field.strip() for field in header.split(delimiter)]
+
+file_id_idx = header_fields.index("file_id")
+subject_idx = header_fields.index("subject.source_subject_id")
+timepoint_idx = header_fields.index("sample.timepoint_sequential")
+
+files_created = 0
+
+for row in merged_lines[1:]:
+    if not row.strip():
+        continue
+    fields = row.rstrip("\r\n").split(delimiter)
+    
+    file_id = fields[file_id_idx].strip()
+    subject_source = fields[subject_idx].strip()
+    timepoint = fields[timepoint_idx].strip()
+    
+    if not subject_source or subject_source == "None":
         subject_source = "UNKNOWN"
+    if not timepoint or timepoint == "None":
         timepoint = "UNKNOWN"
-        matched_meta_data = blank_meta_columns
 
-    # Strip line endings first to bypass f-string backslash limits
-    clean_row = row.rstrip('\r\n')
-
-    # Construct complete horizontal data row cleanly
-    merged_row = f"{clean_row}{manifest_delimiter}{matched_meta_data}\n"
-
-    # Naming convention logic
     combined_name = f"{file_id}_subject.source_subject_id_{subject_source}_sample.timepoint_sequential_{timepoint}"
     combined_name = re.sub(r'[^a-zA-Z0-9_\-.]', '_', combined_name)
     
@@ -128,11 +122,10 @@ for row in manifest_lines[1:]:
     output_filename = f"{combined_name}.txt"
     full_output_path = os.path.join(sub_dir_path, output_filename)
 
-    # Write out the true horizontal layout containing all data fields side-by-side
     with open(full_output_path, "w") as out_f:
-        out_f.write(merged_header)
-        out_f.write(merged_row)
+        out_f.write(merged_lines[0])
+        out_f.write(row)
     
     files_created += 1
 
-print(f"Successfully generated {files_created} horizontally-merged sub-manifests inside '{new_manifest_dir}'.")
+print(f"--> Step 2 Complete: Generated {files_created} operational manifests inside '{new_manifest_dir}'.")
