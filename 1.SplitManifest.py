@@ -40,12 +40,9 @@ for row in data_rows:
     subject_source = row_fields[subject_idx].strip()
     timepoint = row_fields[timepoint_idx].strip()
     
-    # Remove extension from base_filename if it's there (e.g., "sample_01.txt" -> "sample_01")
-    base_name_clean = base_filename.rsplit('.', 1)[0] if '.' in base_filename else base_filename
-    
     # Construct the new descriptive base name
     # e.g., "sample_01_human_TP1"
-    combined_name = f"{base_name_clean}_{subject_source}_{timepoint}"
+    combined_name = f"{base_filename}_subject.source_subject_id_{subject_source}_sample.timepoint_sequential_{timepoint}"
     
     # Sanitize the name to remove any spaces or weird characters that break bash/SLURM paths
     combined_name = re.sub(r'[^a-zA-Z0-9_\-.]', '_', combined_name)
