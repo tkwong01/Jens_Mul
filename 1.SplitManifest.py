@@ -21,7 +21,7 @@ header_fields = [field.strip() for field in header.split(delimiter)]
 
 try:
     filename_idx = header_fields.index("file.name")
-    subject_idx = header_fields.index("subject.source")
+    subject_idx = header_fields.index("subject.source_subject_id")
     timepoint_idx = header_fields.index("sample.timepoint_sequential")
 except ValueError as e:
     raise ValueError(f"Missing required column in header: {e}")
