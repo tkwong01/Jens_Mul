@@ -36,7 +36,7 @@ for LINE_NUM in $(seq $START_LINE $END_LINE); do
     cd "$MAIN_DIR" || exit 1
 
     # 1. Get the absolute path of the specific manifest for this loop iteration
-    MANIFEST_PATH=$(sed -n "${LINE_NUM}p" 2.manifests_absolute_paths)
+    MANIFEST_PATH=$(sed -n "${LINE_NUM}p" 2.manifests_absolute_paths.txt)
     
     # Safety check if the line requested is empty or out of bounds
     if [ -z "$MANIFEST_PATH" ]; then
