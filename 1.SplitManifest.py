@@ -1,7 +1,7 @@
 import os
 import re
 
-manifest = "/Users/tkwong01/Desktop/MTMG_Stata_Plots/MT_MGPaired/manifest_used/SameDay.tsv"
+manifest = "./RealManifests/metadata-6.tsv"
 new_manifest_dir = "sub_manifests"
 
 # Ensure the main base directory exists
