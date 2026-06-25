@@ -51,7 +51,7 @@ for row in meta_lines[1:]:
 blank_meta_columns = meta_delimiter.join(["None"] * len(meta_header_fields))
 
 # ------------------------------------------------------------------------------
-# STEP 2: Merge Horizontally and Split into Sub-Manifests
+# STEP 2: Merge Horizontally and Split into Sub-Manifests (With Adaptive Matching)
 # ------------------------------------------------------------------------------
 with open(manifest_file, "r") as f:
     manifest_lines = f.readlines()
@@ -82,13 +82,31 @@ for row in manifest_lines[1:]:
     file_id = fields[manifest_file_id_idx].strip()
     manifest_sample_id = fields[manifest_sample_idx].strip()
     
-    # Split primary key in case it's comma-separated list
+    # 1. Grab primary key from comma-separated sequence
     clean_sample_key = manifest_sample_id.split(",")[0].strip()
     
+    # 2. Strip operational tracking headers (e.g., VMRC_FRESH_, VMRC_MOD_)
+    clean_sample_key = re.sub(r'^VMRC_[A-Z]+_', '', clean_sample_key)
+    
+    # 3. Strip trailing sequencing extensions if they leaked into the manifest IDs
+    clean_sample_key = re.sub(r'\.R[12]\.fq\.gz$|\.se\.fq\.gz$|\.unpaired\.fq\.gz$', '', clean_sample_key)
+
+    # Check for direct key match or sub-string match inside metadata lookup dictionary
+    matched_key = None
     if clean_sample_key in metadata_lookup:
-        subject_source = metadata_lookup[clean_sample_key]["subject_id"]
-        timepoint = metadata_lookup[clean_sample_key]["timepoint"]
-        matched_meta_data = metadata_lookup[clean_sample_key]["full_meta_row"]
+        matched_key = clean_sample_key
+    else:
+        # Loop through metadata to catch cases where metadata strings contain the keys partially
+        for meta_key in metadata_lookup.keys():
+            if clean_sample_key in meta_key or meta_key in clean_sample_key:
+                matched_key = meta_key
+                break
+
+    # Bind structural row metrics
+    if matched_key:
+        subject_source = metadata_lookup[matched_key]["subject_id"]
+        timepoint = metadata_lookup[matched_key]["timepoint"]
+        matched_meta_data = metadata_lookup[matched_key]["full_meta_row"]
     else:
         subject_source = "UNKNOWN"
         timepoint = "UNKNOWN"
