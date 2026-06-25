@@ -9,7 +9,7 @@ echo "--------------------------------------------------------"
 
 # Find all .txt files, convert to absolute paths, print to screen, and save to file
 # Note: Using $PWD instead of . forces find to output absolute paths.
-find "$PWD" -type f -name "*gz.txt" | tee "$OUTPUT_FILE"
+find "$PWD" -type f -name "subject.source_subject_id*sample.timepoint_sequential*.txt" | tee "$OUTPUT_FILE"
 
 # Count total files found
 count=$(wc -l < "$OUTPUT_FILE")
