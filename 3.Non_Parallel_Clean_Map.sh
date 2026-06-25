@@ -126,10 +126,13 @@ for LINE_NUM in $(seq $START_LINE $END_LINE); do
 
     echo "Step 5: Running X-Mapper to extract reference map counts..."
     conda activate "$mapper"
+
     x-mapper --reference "$VIRGO2_fasta" \
-             --queries "${HEADER}_final_for_virgo.fq.gz" \
-             --num-threads "$threads" \
-             --out-refs-map-count "${HEADER}_refs_map_counts.txt"
+         --queries "${HEADER}_final_for_virgo.fq.gz" \
+         --num-threads "$threads" \
+         --out-vcf "${HEADER}" \
+         --out-mutations "${HEADER}_mutations" \
+         --out-refs-map-count "${HEADER}_refs_map_counts.txt"
 
     if [ -s "${HEADER}_refs_map_counts.txt" ]; then
         echo "Success: ${HEADER}_refs_map_counts.txt generated successfully."
