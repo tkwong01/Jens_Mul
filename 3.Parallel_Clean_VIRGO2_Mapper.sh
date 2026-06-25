@@ -4,7 +4,9 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
 #SBATCH --time=02:00:00
-#SBATCH --array=1-866%18
+#SBATCH --array=1-8%4
+
+#there are 3467 files
 
 cd /cluster/tufts/hussainlab/tkwong01/jens_mul
 #paths
