@@ -7,7 +7,7 @@
 #SBATCH --array=1-8%4
 
 #there are 3467 files
-
+cd /cluster/tufts/hussainlab/tkwong01/Jens_Mul
 #paths
 K2_DB="/cluster/tufts/hussainlab/DATABASES/kraken2_human_db"
 VIRGO2_path="/cluster/tufts/hussainlab/DATABASES/VIRGO2"
