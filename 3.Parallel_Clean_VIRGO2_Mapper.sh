@@ -99,8 +99,9 @@ if [ -f "${HEADER}.out" ]; then
     echo "Success: ${HEADER}.out was created!"
 else
     echo "Error: ${HEADER}.out not found. Something went wrong with VIRGO2. Cutting from .cov"
-    awk -F'\t' '{print $1, $4}' "${HEADER}.cov" > "${HEADER}_from_cov.out"
-
+    
+    # MODIFIED: Added a BEGIN block to explicitly inject 'Gene' and 'Count' headers
+    awk -F'\t' 'BEGIN {print "Gene\tCount"} {print $1, $4}' OFS='\t' "${HEADER}.cov" > "${HEADER}_from_cov.out"
 fi
 
 echo "Task $SLURM_ARRAY_TASK_ID completed successfully. Moving on to mapper"
