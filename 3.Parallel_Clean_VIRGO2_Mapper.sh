@@ -126,3 +126,31 @@ else
     exit 1
 fi
 
+# =====================================================================
+# Clean-up Phase: Purge heavy intermediate files to conserve cluster storage
+# =====================================================================
+echo "Initiating intermediate cleanup..."
+
+# 1. Remove the raw downloaded portal-client file
+if [ -n "$UNP_IN" ] && [ -f "$UNP_IN" ]; then
+    echo "Removing raw downloaded file: $UNP_IN"
+    rm -f "$UNP_IN"
+fi
+
+# 2. Remove fastp output and logs
+rm -f "${HEADER}_cleaned_w.human.fq.gz"
+rm -f "${HEADER}_cleaned_w.human_fastp.html" "${HEADER}_cleaned_w.human_fastp.json"
+
+# 3. Remove uncompressed Kraken microbial output and reports
+rm -f "${HEADER}_microbial_only.fq"
+rm -f "${HEADER}_kraken_report.txt"
+
+# 4. Remove the intermediate compressed microbial FASTQ fed to VIRGO2 and X-Mapper
+rm -f "${HEADER}_final_for_virgo.fq.gz"
+
+# 5. Remove X-Mapper heavy intermediate outputs (VCFs/Mutations blocks) if not needed downstream
+rm -f "${HEADER}.sam" "${HEADER}.vcf" "${HEADER}.vcf.gz" "${HEADER}_mutations"* echo "========================================================"
+echo "Cleanup complete for $HEADER!"
+echo "Preserved: ${HEADER}.out, ${HEADER}.cov, and ${HEADER}_refs_map_counts.txt"
+echo "========================================================"
+
