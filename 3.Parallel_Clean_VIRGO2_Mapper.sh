@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=Parallel_Download_Clean_VIRGO2
 #SBATCH --output=Parallel_logs/Parallel_%a.log
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=16G
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=64G
 #SBATCH --time=02:00:00
 #SBATCH --array=1-8%4
 
