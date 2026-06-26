@@ -25,7 +25,7 @@ mapper="/cluster/tufts/hussainlab/tkwong01/envs/mapper_env"
 threads=$SLURM_CPUS_PER_TASK
 
 # 1. Get the absolute path of the specific manifest for this array task
-MANIFEST_PATH=$(sed -n "${SLURM_ARRAY_TASK_ID}p" 2.manifests_absolute_paths)
+MANIFEST_PATH=$(sed -n "${SLURM_ARRAY_TASK_ID}p" 2.manifests_absolute_paths.txt)
 
 # 2. Extract the directory where this manifest lives and its base name
 MANIFEST_DIR=$(dirname "$MANIFEST_PATH")
