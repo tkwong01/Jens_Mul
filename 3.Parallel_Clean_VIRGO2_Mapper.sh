@@ -112,6 +112,7 @@ source activate "$mapper"
 echo "Running X-Mapper to extract reference map counts..."
 
 # Run x-mapper directly targeting only the counts file output
+export _JAVA_OPTIONS="-Xmx64g"
 x-mapper --reference "$VIRGO2_fasta" \
          --queries "${HEADER}_final_for_virgo.fq.gz" \
          --num-threads "$threads" \
