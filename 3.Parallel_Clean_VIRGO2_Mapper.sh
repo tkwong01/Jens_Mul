@@ -118,7 +118,7 @@ export _JAVA_OPTIONS="-Xmx64g"
 x-mapper --reference "$VIRGO2_fasta" \
          --queries "${HEADER}_final_for_virgo.fq.gz" \
          --num-threads "$threads" \
-         --out-vcf "${HEADER}" \
+         --out-vcf "${HEADER}.vcf" \
          --out-mutations "${HEADER}_mutations" \
          --out-refs-map-count "${HEADER}_refs_map_counts.txt"
 
