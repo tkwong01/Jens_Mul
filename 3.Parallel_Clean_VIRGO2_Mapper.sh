@@ -115,12 +115,13 @@ echo "Running X-Mapper to extract reference map counts..."
 #change memory amount export _JAVA_OPTIONS="-Xmx64g"
 export _JAVA_OPTIONS="-Xmx64g"
 # export _JAVA_OPTIONS="-Xmx128g"
-x-mapper --reference "$VIRGO2_fasta" \
+x-mapper -Xms512m -Xmx64g \
+         --reference "$VIRGO2_fasta" \
          --queries "${HEADER}_final_for_virgo.fq.gz" \
          --num-threads "$threads" \
          --out-vcf "${HEADER}.vcf" \
          --out-mutations "${HEADER}_mutations" \
-         --out-refs-map-count "${HEADER}_refs_map_counts.txt"
+         --out-refs-map-count "${HEADER}.mapper.txt" 
 
 # Verify the file was successfully written and is not empty
 if [ -s "${HEADER}_refs_map_counts.txt" ]; then
@@ -155,6 +156,6 @@ rm -f "${HEADER}_final_for_virgo.fq.gz"
 # 5. Remove X-Mapper heavy intermediate outputs (VCFs/Mutations blocks) if not needed downstream
 rm -f "${HEADER}.sam" "${HEADER}.vcf" "${HEADER}.vcf.gz" "${HEADER}_mutations"* echo "========================================================"
 echo "Cleanup complete for $HEADER!"
-echo "Preserved: ${HEADER}.out, ${HEADER}.cov, and ${HEADER}_refs_map_counts.txt"
+echo "Preserved: ${HEADER}.out, ${HEADER}.cov, and ${HEADER}.mapper.txt"
 echo "========================================================"
 
