@@ -3,10 +3,11 @@
 #SBATCH --output=Parallel_logs/Parallel_%a.log
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=02:00:00
-#SBATCH --array=1-8%4
+#SBATCH --time=06:00:00
+#SBATCH --array=1-500%10
 
 #there are 3467 files
+# June 26 array=1-200%10, mem=48G
 cd /cluster/tufts/hussainlab/tkwong01/Jens_Mul
 #paths
 K2_DB="/cluster/tufts/hussainlab/DATABASES/kraken2_human_db"
@@ -18,7 +19,7 @@ module load miniforge
 gcp="/cluster/tufts/hussainlab/tkwong01/envs/gcp-tools"
 fastp="/cluster/tufts/hussainlab/tkwong01/envs/VIRGO2_env"
 virgo2="/cluster/tufts/hussainlab/tkwong01/envs/VIRGO2_env"
-module load miniforge kraken2/2.1.3 java/11.0.2
+module load miniforge kraken2/2.1.3 java/11.0.2 modtree/rocky9 modtree/deprecated
 mapper="/cluster/tufts/hussainlab/tkwong01/envs/mapper_env"
 
 # Set threads from SLURM allocation
@@ -158,4 +159,3 @@ rm -f "${HEADER}.sam" "${HEADER}.vcf" "${HEADER}.vcf.gz" "${HEADER}_mutations"* 
 echo "Cleanup complete for $HEADER!"
 echo "Preserved: ${HEADER}.out, ${HEADER}.cov, and ${HEADER}.mapper.txt"
 echo "========================================================"
-
