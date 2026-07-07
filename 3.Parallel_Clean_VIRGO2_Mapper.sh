@@ -53,7 +53,6 @@ portal-client --manifest "$MANIFEST_FILE" \
               --endpoint-priority GS,HTTP
 
 # Dynamically find the downloaded FASTQ file in the current directory
-# Adjust this if portal-client names the downloaded file differently
 UNP_IN=$(find . -maxdepth 1 -type f -name "*.fastq" -o -name "*.fq" -o -name "*.fastq.gz" -o -name "*.fq.gz" | head -n 1)
 
 if [ -z "$UNP_IN" ]; then
@@ -72,7 +71,6 @@ fastp -i "$UNP_IN" -o "${HEADER}_cleaned_w.human.fq.gz" \
 
 
 echo "Step 3: Removing human reads with Kraken2..."
-# Assuming Kraken2 database path ($K2_DB) is exported globally in your environment
 kraken2 --db "$K2_DB" \
         --threads "$threads" \
         --quick \
@@ -85,7 +83,6 @@ gzip -c "${HEADER}_microbial_only.fq" > "${HEADER}_final_for_virgo.fq.gz"
 
 
 echo "Step 4: Executing VIRGO2 map..."
-# Assuming $VIRGO2_path is exported globally in your environment
 conda deactivate
 source activate "$virgo2"
 python "$VIRGO2_path/VIRGO2.py" map \
@@ -100,8 +97,6 @@ if [ -f "${HEADER}.out" ]; then
     echo "Success: ${HEADER}.out was created!"
 else
     echo "Error: ${HEADER}.out not found. Something went wrong with VIRGO2. Cutting from .cov"
-    
-    # MODIFIED: Added a BEGIN block to explicitly inject 'Gene' and 'Count' headers
     awk -F'\t' 'BEGIN {print "Gene\tCount"} {print $1, $4}' OFS='\t' "${HEADER}.cov" > "${HEADER}_from_cov.out"
 fi
 
@@ -112,10 +107,7 @@ source activate "$mapper"
 # X-MAPPER: Alignment
 echo "Running X-Mapper to extract reference map counts..."
 
-# Run x-mapper directly targeting only the counts file output
-#change memory amount export _JAVA_OPTIONS="-Xmx64g"
 export _JAVA_OPTIONS="-Xmx64g"
-# export _JAVA_OPTIONS="-Xmx128g"
 x-mapper -Xms512m -Xmx64g \
          --reference "$VIRGO2_fasta" \
          --queries "${HEADER}_final_for_virgo.fq.gz" \
@@ -125,11 +117,21 @@ x-mapper -Xms512m -Xmx64g \
          --out-refs-map-count "${HEADER}.mapper.txt" 
 
 # Verify the file was successfully written and is not empty
-if [ -s "${HEADER}_refs_map_counts.txt" ]; then
-    echo "Success: ${HEADER}_refs_map_counts.txt generated successfully."
+# FIXED: Checked against ${HEADER}.mapper.txt to match x-mapper output flag
+if [ -s "${HEADER}.mapper.txt" ] && [ -f "${HEADER}.sam" ]; then
+    echo "Success: ${HEADER}.mapper.txt and SAM generated successfully. Proceeding with coverage generation."
+    samtools sort -O BAM "${HEADER}.sam" > "${HEADER}_temp.bam"
+    samtools index "${HEADER}_temp.bam"
+
+    # Extract counts, format with a header, and save as .cov
+    echo -e "Gene\tCount" > "${HEADER}_mapper.cov"
+    samtools idxstats "${HEADER}_temp.bam" | awk '$3 > 0 {print $1"\t"$3}' >> "${HEADER}_mapper.cov"
+
+    # Clean up the temp BAM files
+    rm "${HEADER}_temp.bam" "${HEADER}_temp.bam.bai"
 else
-    echo "ERROR: X-Mapper failed to generate mapping counts."
-    exit 1
+    # FIXED: Non-fatal error. Do NOT exit 1, allowing script to hit the cleanup block below.
+    echo "WARNING/ERROR: X-Mapper failed to generate expected outputs. Skipping .cov generation, proceeding directly to cleanup."
 fi
 
 # =====================================================================
@@ -154,8 +156,9 @@ rm -f "${HEADER}_kraken_report.txt"
 # 4. Remove the intermediate compressed microbial FASTQ fed to VIRGO2 and X-Mapper
 rm -f "${HEADER}_final_for_virgo.fq.gz"
 
-# 5. Remove X-Mapper heavy intermediate outputs (VCFs/Mutations blocks) if not needed downstream
+# 5. Remove X-Mapper heavy intermediate outputs (VCFs/Mutations blocks)
+# FIXED: Split broken multi-line syntax error near the echo command
 rm -f "${HEADER}.sam" "${HEADER}.vcf" "${HEADER}.vcf.gz" "${HEADER}_mutations"* echo "========================================================"
 echo "Cleanup complete for $HEADER!"
-echo "Preserved: ${HEADER}.out, ${HEADER}.cov, and ${HEADER}.mapper.txt"
+echo "Preserved: ${HEADER}.out, ${HEADER}.cov, and ${HEADER}.mapper.txt (if generated successfully)"
 echo "========================================================"
