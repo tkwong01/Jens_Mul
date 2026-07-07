@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH --job-name=Parallel_Download_Clean_VIRGO2
+#SBATCH --job-name=Parallel_Download_Clean_VIRGO2_1-500
 #SBATCH --output=Parallel_logs/Parallel_%a.log
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=06:00:00
-#SBATCH --array=1-500%10
+#SBATCH --time=02:00:00
+#SBATCH --array=1-2%2
 
 #there are 3467 files
 # June 26 array=1-200%10, mem=48G
@@ -113,6 +113,7 @@ x-mapper -Xms512m -Xmx64g \
          --queries "${HEADER}_final_for_virgo.fq.gz" \
          --num-threads "$threads" \
          --out-vcf "${HEADER}.vcf" \
+         --out-sam "${HEADER}.sam"
          --out-mutations "${HEADER}_mutations" \
          --out-refs-map-count "${HEADER}.mapper.txt" 
 
@@ -158,7 +159,8 @@ rm -f "${HEADER}_final_for_virgo.fq.gz"
 
 # 5. Remove X-Mapper heavy intermediate outputs (VCFs/Mutations blocks)
 # FIXED: Split broken multi-line syntax error near the echo command
-rm -f "${HEADER}.sam" "${HEADER}.vcf" "${HEADER}.vcf.gz" "${HEADER}_mutations"* echo "========================================================"
+rm -f "${HEADER}.sam" "${HEADER}.vcf" "${HEADER}.vcf.gz" echo "========================================================"
+#rm -f "${HEADER}_mutations"*
 echo "Cleanup complete for $HEADER!"
 echo "Preserved: ${HEADER}.out, ${HEADER}.cov, and ${HEADER}.mapper.txt (if generated successfully)"
 echo "========================================================"
