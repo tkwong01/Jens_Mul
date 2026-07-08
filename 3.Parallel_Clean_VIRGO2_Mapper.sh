@@ -1,14 +1,15 @@
 #!/bin/bash
 #SBATCH --job-name=Parallel_Download_Clean_VIRGO2_1-500
 #SBATCH --output=/cluster/tufts/hussainlab/tkwong01/Jens_Mul/Parallel_logs/Parallel_%a.log
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=64G
-#SBATCH --time=02:00:00
-#SBATCH --array=1-500%20
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=128G
+#SBATCH --time=04:00:00
+#SBATCH --array=1-500%250
 
 #there are 3467 files
-# June 26 array=1-200%10, mem=48G
+
 cd /cluster/tufts/hussainlab/tkwong01/Jens_Mul
+
 #paths
 K2_DB="/cluster/tufts/hussainlab/DATABASES/kraken2_human_db"
 VIRGO2_path="/cluster/tufts/hussainlab/DATABASES/VIRGO2"
@@ -24,6 +25,7 @@ mapper="/cluster/tufts/hussainlab/tkwong01/envs/mapper_env"
 
 # Set threads from SLURM allocation
 threads=$SLURM_CPUS_PER_TASK
+echo "# threads $threads"
 
 # 1. Get the absolute path of the specific manifest for this array task
 MANIFEST_PATH=$(sed -n "${SLURM_ARRAY_TASK_ID}p" 2.manifests_absolute_paths.txt)
