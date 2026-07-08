@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=Parallel_Download_Clean_VIRGO2_1-500
-#SBATCH --output=Parallel_logs/Parallel_%a.log
+#SBATCH --output=/cluster/tufts/hussainlab/tkwong01/Jens_Mul/Parallel_logs/Parallel_%a.log
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=02:00:00
-#SBATCH --array=1-2%2
+#SBATCH --array=1-500%20
 
 #there are 3467 files
 # June 26 array=1-200%10, mem=48G
@@ -38,6 +38,17 @@ HEADER="${MANIFEST_FILE%.*}"
 # 4. CRITICAL: Change directory to where the manifest is stored.
 # This ensures ALL downstream tool outputs land exactly in this directory.
 cd "$MANIFEST_DIR" || exit 1
+
+# =====================================================================
+# Pre-execution Check: Skip if final preserved files already exist
+# =====================================================================
+if { [ -f "${HEADER}.out" ] || [ -f "${HEADER}.cov" ]; } && [ -f "${HEADER}.mapper.txt" ] && [ -f "${HEADER}_mutations.txt" ]; then
+    echo "========================================================"
+    echo "Array Task ID: $SLURM_ARRAY_TASK_ID ($HEADER)"
+    echo "All final preserved files already exist. Skipping execution."
+    echo "========================================================"
+    exit 0
+fi
 
 echo "========================================================"
 echo "Array Task ID: $SLURM_ARRAY_TASK_ID"
@@ -113,12 +124,11 @@ x-mapper -Xms512m -Xmx64g \
          --queries "${HEADER}_final_for_virgo.fq.gz" \
          --num-threads "$threads" \
          --out-vcf "${HEADER}.vcf" \
-         --out-sam "${HEADER}.sam"
-         --out-mutations "${HEADER}_mutations" \
+         --out-sam "${HEADER}.sam" \
+         --out-mutations "${HEADER}_mutations.txt" \
          --out-refs-map-count "${HEADER}.mapper.txt" 
 
 # Verify the file was successfully written and is not empty
-# FIXED: Checked against ${HEADER}.mapper.txt to match x-mapper output flag
 if [ -s "${HEADER}.mapper.txt" ] && [ -f "${HEADER}.sam" ]; then
     echo "Success: ${HEADER}.mapper.txt and SAM generated successfully. Proceeding with coverage generation."
     samtools sort -O BAM "${HEADER}.sam" > "${HEADER}_temp.bam"
@@ -131,7 +141,6 @@ if [ -s "${HEADER}.mapper.txt" ] && [ -f "${HEADER}.sam" ]; then
     # Clean up the temp BAM files
     rm "${HEADER}_temp.bam" "${HEADER}_temp.bam.bai"
 else
-    # FIXED: Non-fatal error. Do NOT exit 1, allowing script to hit the cleanup block below.
     echo "WARNING/ERROR: X-Mapper failed to generate expected outputs. Skipping .cov generation, proceeding directly to cleanup."
 fi
 
@@ -157,10 +166,10 @@ rm -f "${HEADER}_kraken_report.txt"
 # 4. Remove the intermediate compressed microbial FASTQ fed to VIRGO2 and X-Mapper
 rm -f "${HEADER}_final_for_virgo.fq.gz"
 
-# 5. Remove X-Mapper heavy intermediate outputs (VCFs/Mutations blocks)
-# FIXED: Split broken multi-line syntax error near the echo command
-rm -f "${HEADER}.sam" "${HEADER}.vcf" "${HEADER}.vcf.gz" echo "========================================================"
-#rm -f "${HEADER}_mutations"*
+# 5. Remove X-Mapper heavy intermediate outputs
+rm -f "${HEADER}.sam" "${HEADER}.vcf" "${HEADER}.vcf.gz"
+echo "========================================================"
+#rm -f "${HEADER}_mutations.txt"*
 echo "Cleanup complete for $HEADER!"
-echo "Preserved: ${HEADER}.out, ${HEADER}.cov, and ${HEADER}.mapper.txt (if generated successfully)"
+echo "Preserved: ${HEADER}.out, ${HEADER}.cov, and ${HEADER}.mapper.txt ${HEADER}_mutations.txt (if generated successfully)"
 echo "========================================================"
