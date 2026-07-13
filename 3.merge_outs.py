@@ -8,7 +8,6 @@ working_dir = "/cluster/tufts/hussainlab/tkwong01/Jens_Mul/sub_manifests"
 tmp_cov_dir = "/cluster/tufts/hussainlab/tkwong01/Jens_Mul/tmp_mapper_files"
 os.makedirs(tmp_cov_dir, exist_ok=True)
 
-# Captures: Group 1 (prefix before R1/R2/unpaired), Group 2 (subject_id), Group 3 (everything after sequential_)
 mg_pattern = re.compile(
     r"(.+?)\.(?:R1|R2|unpaired)\.fq\.gz_subject\.source_subject_id_(.+?)_sample\.timepoint_sequential_(.+)$"
 )
@@ -24,24 +23,22 @@ for root, _, files in os.walk(working_dir):
         if file.endswith("_mapper.cov"):
             full_path = os.path.join(root, file)
             
-            # CRITICAL CHECK: Isolate Single-End or MT reads
+            # 1. STRICT CHECK: Isolate Single-End or MT reads completely
             if "MT" in file or ".se.fq.gz" in file:
-                # Use base name without extension as a completely unique key so it doesn't merge
                 group_key = os.path.basename(file).replace("_mapper.cov", "")
                 groups[group_key].append(full_path)
+                continue 
+                
+            # 2. Process paired-end MG matching rules
+            match = mg_pattern.search(file)
+            if match:
+                prefix, subject_id, trailing = match.groups()
+                group_key = f"{prefix}_{subject_id}_sequential_{trailing}"
+                groups[group_key].append(full_path)
             else:
-                # Process paired-end MG matching rules
-                match = mg_pattern.search(file)
-                if match:
-                    prefix, subject_id, trailing = match.groups()
-                    group_key = f"{prefix}_{subject_id}_sequential_{trailing}"
-                else:
-                    # Fallback unique key if filename pattern is unexpected
-                    group_key = os.path.basename(file).replace("_mapper.cov", "")
-                    groups[group_key].append(full_path)
-                    continue
-            
-            groups[group_key].append(full_path)
+                # Fallback unique key if filename pattern is unexpected
+                group_key = os.path.basename(file).replace("_mapper.cov", "")
+                groups[group_key].append(full_path)
 
 print(f"Found {len(groups)} unique sample groups.\n")
 
@@ -50,7 +47,6 @@ print("DETAILED MAPPER COV MERGE LIST")
 print("="*80)
 
 for group_key, file_paths in groups.items():
-    # Deduplicate paths just in case fallback and primary logic overlap
     file_paths = list(set(file_paths))
     
     print(f"\nGroup Destination: {group_key}_mapper.cov")
@@ -89,7 +85,6 @@ working_dir = "/cluster/tufts/hussainlab/tkwong01/Jens_Mul/sub_manifests"
 tmp_out_dir = "/cluster/tufts/hussainlab/tkwong01/Jens_Mul/tmp_out_files"
 os.makedirs(tmp_out_dir, exist_ok=True)
 
-# Captures: Group 1 (prefix before R1/R2/unpaired), Group 2 (subject_id), Group 3 (everything after sequential_)
 mg_pattern = re.compile(
     r"(.+?)\.(?:R1|R2|unpaired)\.fq\.gz_subject\.source_subject_id_(.+?)_sample\.timepoint_sequential_(.+)$"
 )
@@ -105,23 +100,21 @@ for root, _, files in os.walk(working_dir):
         if file.endswith(".out"):
             full_path = os.path.join(root, file)
             
-            # CRITICAL CHECK: Isolate Single-End or MT reads
+            # 1. STRICT CHECK: Isolate Single-End or MT reads completely
             if "MT" in file or ".se.fq.gz" in file:
-                # Keep completely isolated
                 group_key = os.path.basename(file).replace(".out", "")
                 groups[group_key].append(full_path)
+                continue 
+                
+            # 2. Process paired-end MG matching rules
+            match = mg_pattern.search(file)
+            if match:
+                prefix, subject_id, trailing = match.groups()
+                group_key = f"{prefix}_{subject_id}_sequential_{trailing}"
+                groups[group_key].append(full_path)
             else:
-                # Process paired-end MG matching rules
-                match = mg_pattern.search(file)
-                if match:
-                    prefix, subject_id, trailing = match.groups()
-                    group_key = f"{prefix}_{subject_id}_sequential_{trailing}"
-                else:
-                    group_key = os.path.basename(file).replace(".out", "")
-                    groups[group_key].append(full_path)
-                    continue
-            
-            groups[group_key].append(full_path)
+                group_key = os.path.basename(file).replace(".out", "")
+                groups[group_key].append(full_path)
 
 print(f"Found {len(groups)} unique sample groups.\n")
 
