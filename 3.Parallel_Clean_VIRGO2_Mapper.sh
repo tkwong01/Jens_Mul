@@ -20,7 +20,8 @@ module load miniforge
 gcp="/cluster/tufts/hussainlab/tkwong01/envs/gcp-tools"
 fastp="/cluster/tufts/hussainlab/tkwong01/envs/VIRGO2_env"
 virgo2="/cluster/tufts/hussainlab/tkwong01/envs/VIRGO2_env"
-module load miniforge kraken2/2.1.3 java/11.0.2 modtree/rocky9 modtree/deprecated
+module load miniforge kraken2/2.1.3 java/11.0.2 
+# module load modtree/rocky9 modtree/deprecated
 mapper="/cluster/tufts/hussainlab/tkwong01/envs/mapper_env"
 
 # Set threads from SLURM allocation
@@ -44,7 +45,7 @@ cd "$MANIFEST_DIR" || exit 1
 # =====================================================================
 # Pre-execution Check: Skip if final preserved files already exist
 # =====================================================================
-if { [ -f "${HEADER}.out" ] || [ -f "${HEADER}.cov" ]; } && [ -f "${HEADER}.mapper.txt" ] && [ -f "${HEADER}_mutations.txt" ]; then
+if { [ -f "${HEADER}.out" ] || [ -f "${HEADER}_mapper_.cov" ]; } && [ -f "${HEADER}.mapper.txt" ] && [ -f "${HEADER}_mutations.txt" ]; then
     echo "========================================================"
     echo "Array Task ID: $SLURM_ARRAY_TASK_ID ($HEADER)"
     echo "All final preserved files already exist. Skipping execution."
