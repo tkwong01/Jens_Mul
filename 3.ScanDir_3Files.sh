@@ -26,6 +26,11 @@ for dir in */; do
     if ! (ls ${dir}*_mutations.txt >/dev/null 2>&1); then
         missing+="_mutations.txt; "
     fi
+
+    # Check for *_mutations.txt
+    if ! (ls ${dir}*.out >/dev/null 2>&1); then
+        missing+=".out; "
+    fi
     
     # If anything is missing, report it and log it to the CSV
     if [ ! -z "$missing" ]; then
@@ -43,3 +48,6 @@ done
 
 echo "--------------------------------------------------"
 echo "Scan complete. CSV saved to: $csv_file"
+
+
+#find . -type f -name "*.out" -exec wc -l {} + | grep -v ' total$' | sort -n > out_file_lengths.txt
