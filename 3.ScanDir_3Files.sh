@@ -27,7 +27,7 @@ for dir in */; do
         missing+="_mutations.txt; "
     fi
 
-    # Check for *_mutations.txt
+    # Check for *_out.txt
     if ! (ls ${dir}*.out >/dev/null 2>&1); then
         missing+=".out; "
     fi
